@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Slither.io Infinite Loop</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 50px; background: #111; color: #eee; }
+        .status { margin: 20px; padding: 15px; border-radius: 8px; background: #222; }
+        button { padding: 15px 30px; font-size: 18px; cursor: pointer; border: none; border-radius: 5px; margin: 10px; }
+        #startBtn { background: #28a745; color: white; }
+        #stopBtn { background: #dc3545; color: white; }
+    </style>
+</head>
+<body>
+
+    <h2>Slither.io Loop (20 Tabs)</h2>
+    <div class="status" id="statusBox">Status: Ready</div>
+
+    <button id="startBtn" onclick="startLoop()">Start Infinite Loop</button>
+    <button id="stopBtn" onclick="stopLoop()">Stop & Close All</button>
+
+    <script>
+        let tabList = [];
+        let loopInterval = null;
+        const url = "https://slither.io";
+        const tabCount = 20;
+        const openDuration = 10000; // How long tabs stay open (10 seconds)
+
+        function startLoop() {
+            if (loopInterval) return;
+            document.getElementById('statusBox').innerText = "Status: Running...";
+            
+            // Initial run
+            runCycle();
+            
+            // Repeat cycle
+            loopInterval = setInterval(runCycle, openDuration + 2000); 
+        }
+
+        function runCycle() {
+            // 1. Open the tabs
+            for (let i = 0; i < tabCount; i++) {
+                let newTab = window.open(url, '_blank');
+                if (newTab) tabList.push(newTab);
+            }
+
+            // 2. Schedule them to close
+            setTimeout(() => {
+                closeTabs();
+                document.getElementById('statusBox').innerText = "Status: Waiting for next cycle...";
+            }, openDuration);
+        }
+
+        function closeTabs() {
+            tabList.forEach(tab => {
+                if (tab && !tab.closed) {
+                    tab.close();
+                }
+            });
+            tabList = []; // Clear the list
+        }
+
+        function stopLoop() {
+            clearInterval(loopInterval);
+            loopInterval = null;
+            closeTabs();
+            document.getElementById('statusBox').innerText = "Status: Stopped";
+        }
+    </script>
+
+</body>
+</html>
