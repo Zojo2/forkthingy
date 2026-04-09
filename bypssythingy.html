@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chromebook File Patcher</title>
+    <style>
+        body { font-family: sans-serif; background: #1e1e1e; color: #eee; padding: 20px; }
+        textarea { width: 100%; height: 400px; background: #111; color: #0f0; font-family: monospace; border: 1px solid #444; margin-top: 10px; }
+        button { padding: 10px 20px; background: #00AAD7; color: white; border: none; cursor: pointer; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h2>File Patcher</h2>
+    <!-- This is the 'Open Local File' button you need -->
+    <button id="openBtn">Open Local File</button>
+    <button id="saveBtn" disabled>Save Fixes</button>
+    <p id="fileName">No file loaded</p>
+    
+    <textarea id="editor" placeholder="Code will appear here..."></textarea>
+
+    <script>
+        let fileHandle;
+        const openBtn = document.getElementById('openBtn');
+        const saveBtn = document.getElementById('saveBtn');
+        const editor = document.getElementById('editor');
+        const fileName = document.getElementById('fileName');
+
+        // This uses the File System Access API to pick and read your file
+        openBtn.addEventListener('click', async () => {
+            [fileHandle] = await window.showOpenFilePicker();
+            const file = await fileHandle.getFile();
+            fileName.textContent = "Editing: " + file.name;
+            editor.value = await file.text(); // The 'Big Text Box' fills here
+            saveBtn.disabled = false;
+        });
+
+        saveBtn.addEventListener('click', async () => {
+            const writable = await fileHandle.createWritable();
+            await writable.write(editor.value);
+            await writable.close();
+            alert("File saved! Refresh your other tab to see the patch.");
+        });
+    </script>
+</body>
+</html>
