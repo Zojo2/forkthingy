@@ -1,104 +1,70 @@
-<!DOCTYPE HTML>
-<html lang="en">
+<!DOCTYPE html>
+<html>
 <head>
-    <meta charset="utf-8">
-    <title>Security Test Environment</title>
-    <link href="//://bootstrapcdn.com" rel="stylesheet">
+    <title>White Hat Security Audit</title>
     <style>
-        /* ATTACKER SIDEBAR STYLES */
-        #attacker-panel {
-            position: fixed;
-            left: 0; top: 0; bottom: 0;
-            width: 300px;
-            background: #222;
-            color: #ff4d4d;
-            padding: 20px;
-            border-right: 3px solid #ff4d4d;
-            z-index: 9999;
-            font-family: monospace;
-            overflow-y: auto;
+        body { font-family: 'Roboto', sans-serif; background: #111; color: #eee; text-align: center; padding: 40px; }
+        .dashboard { border: 2px solid #00AAD7; display: inline-block; padding: 30px; border-radius: 10px; background: #1a1a1a; }
+        button { 
+            display: block; width: 100%; margin: 10px 0; padding: 12px; 
+            background: #00AAD7; color: white; border: none; cursor: pointer; font-weight: bold; 
         }
-        .vuln-found { background: #451a1a; padding: 10px; border-radius: 5px; margin-bottom: 10px; border-left: 4px solid red; }
-        .safe { color: #00ff00; border-left: 4px solid #00ff00; background: #1a451a; }
-        
-        /* YOUR ORIGINAL PAGE STYLES */
-        body { background-color: #3E3E3E; margin-left: 300px; font-family: sans-serif; }
-        .content { color: #c7c7c7; text-align: center; margin-top: 100px; }
-        .popspace { background: #DBDBDB; padding: 20px; margin-top: 20px; display: inline-block; border-radius: 5px; }
+        button:hover { background: #008cb1; }
+        .warning { color: #ff4d4d; font-size: 12px; margin-top: 20px; }
     </style>
 </head>
 <body>
 
-    <!-- 1. THE ATTACKER SIDEBAR (Detects the problems) -->
-    <div id="attacker-panel">
-        <h3>🚨 Security Audit</h3>
-        <hr>
-        <div id="audit-results">Scanning page...</div>
-        <button onclick="revealAll()" style="width:100%; margin-top:10px;">Force Reveal Hidden UI</button>
-    </div>
-
-    <!-- 2. THE VULNERABLE CONTENT (The problems we talked about) -->
-    <div class="content">
-        <h1>Restricted</h1>
-        <p>This site is blocked by your admin.</p>
-
-        <!-- PROBLEM 1: Hidden Login Div (CSS Bypass) -->
-        <div id="logindiv" class="popspace" style="display: none;">
-            <h4 style="color:#333">Admin Bypass</h4>
-            <input type="password" id="passInput" placeholder="Enter Password">
-            <button onclick="checkPass()">Login</button>
-        </div>
-
-        <br>
-        <button onclick="showLogin()">Show Admin Login</button>
+    <div class="dashboard">
+        <h2>Security Audit Tools</h2>
+        <p>Target: <strong>funnythingnew.html</strong></p>
+        <hr style="border: 0; border-top: 1px solid #333;">
+        
+        <button onclick="exploit(1)">1. Force Reveal UI (CSS Bypass)</button>
+        <button onclick="exploit(2)">2. Sniff Variables (Password Search)</button>
+        <button onclick="exploit(3)">3. Hijack Logic (Function Overwrite)</button>
+        
+        <p class="warning">If these buttons work, your file needs a "Private Scope" patch.</p>
     </div>
 
     <script>
-        // PROBLEM 2: Hardcoded Password (The biggest problem)
-        const ADMIN_SECRET = "Admin1234!"; 
+        let targetWindow;
 
-        function checkPass() {
-            const input = document.getElementById('passInput').value;
-            if (input === ADMIN_SECRET) {
-                alert("Bypass successful!");
-            } else {
-                alert("Wrong password!");
-            }
-        }
-
-        function showLogin() {
-            document.getElementById('logindiv').style.display = 'block';
-        }
-
-        // WHITE HAT ATTACKER LOGIC
-        function runAudit() {
-            const results = document.getElementById('audit-results');
-            let report = "";
-
-            // Check for hidden divs (Problem 1)
-            const loginBox = document.getElementById('logindiv');
-            if (window.getComputedStyle(loginBox).display === 'none') {
-                report += `<div class="vuln-found"><b>FOUND:</b> Hidden Bypass UI (#logindiv). An attacker can force this to appear.</div>`;
+        function exploit(type) {
+            // Open the target if not already open
+            if (!targetWindow || targetWindow.closed) {
+                targetWindow = window.open('funnythingnew.html', '_blank');
             }
 
-            // Check for hardcoded password strings (Problem 2)
-            const scripts = document.body.innerHTML;
-            if (scripts.includes("Admin1234!")) {
-                report += `<div class="vuln-found"><b>FOUND:</b> Hardcoded Password string detected in source code!</div>`;
-            }
-
-            results.innerHTML = report || `<div class="vuln-found safe">No obvious client-side flaws detected.</div>`;
+            // Wait a moment for the page to be ready
+            setTimeout(() => {
+                if (type === 1) {
+                    // ATTACK 1: Force Reveal
+                    targetWindow.document.getElementById('logindiv').style.display = 'block';
+                    targetWindow.document.getElementById('logindiv').style.height = 'auto';
+                    targetWindow.document.getElementById('logindiv').style.width = 'auto';
+                    alert("Audit 1: UI Revealed using CSS overwrite.");
+                } 
+                else if (type === 2) {
+                    // ATTACK 2: Variable Sniffing
+                    // It tries to find common names like 'ADMIN_SECRET' or 'password'
+                    const secret = targetWindow.ADMIN_SECRET || targetWindow.password;
+                    alert(secret ? "Audit 2: Secret Found! -> " + secret : "Audit 2: Secret is Private (Secure).");
+                } 
+                else if (type === 3) {
+                    // ATTACK 3: Logic Hijack
+                    // We rewrite their button action to skip the password entirely
+                    const btn = targetWindow.document.querySelector('.submitAll') || targetWindow.document.getElementById('submitBtn');
+                    if (btn) {
+                        btn.onclick = function() {
+                            alert("Audit 3: Logic Hijacked! Bypassing password check...");
+                            targetWindow.location.href = "https://google.com"; // Redirects anywhere
+                        };
+                        alert("Audit 3: Button Hijacked. Try clicking 'Bypass' in the other window!");
+                    }
+                }
+            }, 500);
         }
-
-        function revealAll() {
-            document.getElementById('logindiv').style.display = 'block';
-            document.getElementById('logindiv').style.border = '2px dashed red';
-            alert("Bypass triggered: Hidden elements revealed via script.");
-        }
-
-        // Run audit every 2 seconds
-        setInterval(runAudit, 2000);
     </script>
-
 </body>
 </html>
