@@ -1,0 +1,104 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Security Test Environment</title>
+    <link href="//://bootstrapcdn.com" rel="stylesheet">
+    <style>
+        /* ATTACKER SIDEBAR STYLES */
+        #attacker-panel {
+            position: fixed;
+            left: 0; top: 0; bottom: 0;
+            width: 300px;
+            background: #222;
+            color: #ff4d4d;
+            padding: 20px;
+            border-right: 3px solid #ff4d4d;
+            z-index: 9999;
+            font-family: monospace;
+            overflow-y: auto;
+        }
+        .vuln-found { background: #451a1a; padding: 10px; border-radius: 5px; margin-bottom: 10px; border-left: 4px solid red; }
+        .safe { color: #00ff00; border-left: 4px solid #00ff00; background: #1a451a; }
+        
+        /* YOUR ORIGINAL PAGE STYLES */
+        body { background-color: #3E3E3E; margin-left: 300px; font-family: sans-serif; }
+        .content { color: #c7c7c7; text-align: center; margin-top: 100px; }
+        .popspace { background: #DBDBDB; padding: 20px; margin-top: 20px; display: inline-block; border-radius: 5px; }
+    </style>
+</head>
+<body>
+
+    <!-- 1. THE ATTACKER SIDEBAR (Detects the problems) -->
+    <div id="attacker-panel">
+        <h3>🚨 Security Audit</h3>
+        <hr>
+        <div id="audit-results">Scanning page...</div>
+        <button onclick="revealAll()" style="width:100%; margin-top:10px;">Force Reveal Hidden UI</button>
+    </div>
+
+    <!-- 2. THE VULNERABLE CONTENT (The problems we talked about) -->
+    <div class="content">
+        <h1>Restricted</h1>
+        <p>This site is blocked by your admin.</p>
+
+        <!-- PROBLEM 1: Hidden Login Div (CSS Bypass) -->
+        <div id="logindiv" class="popspace" style="display: none;">
+            <h4 style="color:#333">Admin Bypass</h4>
+            <input type="password" id="passInput" placeholder="Enter Password">
+            <button onclick="checkPass()">Login</button>
+        </div>
+
+        <br>
+        <button onclick="showLogin()">Show Admin Login</button>
+    </div>
+
+    <script>
+        // PROBLEM 2: Hardcoded Password (The biggest problem)
+        const ADMIN_SECRET = "Admin1234!"; 
+
+        function checkPass() {
+            const input = document.getElementById('passInput').value;
+            if (input === ADMIN_SECRET) {
+                alert("Bypass successful!");
+            } else {
+                alert("Wrong password!");
+            }
+        }
+
+        function showLogin() {
+            document.getElementById('logindiv').style.display = 'block';
+        }
+
+        // WHITE HAT ATTACKER LOGIC
+        function runAudit() {
+            const results = document.getElementById('audit-results');
+            let report = "";
+
+            // Check for hidden divs (Problem 1)
+            const loginBox = document.getElementById('logindiv');
+            if (window.getComputedStyle(loginBox).display === 'none') {
+                report += `<div class="vuln-found"><b>FOUND:</b> Hidden Bypass UI (#logindiv). An attacker can force this to appear.</div>`;
+            }
+
+            // Check for hardcoded password strings (Problem 2)
+            const scripts = document.body.innerHTML;
+            if (scripts.includes("Admin1234!")) {
+                report += `<div class="vuln-found"><b>FOUND:</b> Hardcoded Password string detected in source code!</div>`;
+            }
+
+            results.innerHTML = report || `<div class="vuln-found safe">No obvious client-side flaws detected.</div>`;
+        }
+
+        function revealAll() {
+            document.getElementById('logindiv').style.display = 'block';
+            document.getElementById('logindiv').style.border = '2px dashed red';
+            alert("Bypass triggered: Hidden elements revealed via script.");
+        }
+
+        // Run audit every 2 seconds
+        setInterval(runAudit, 2000);
+    </script>
+
+</body>
+</html>
